@@ -16,20 +16,37 @@ router.post('/convert', upload.single('csvFile'), (req, res) => {
 
     const filePath = req.file.path;
 
-    // Convert CSV to JSON using the service
-    CSVService.convertToJSON(filePath, (err, data) => {
-      if (err) {
+    // Validate CSV structure first
+    CSVService.validateCSV(filePath, (validationErr, isValid) => {
+      if (validationErr) {
+        // Clean up file on validation error
+        CSVService.deleteFile(filePath, () => {});
         return res
           .status(400)
-          .json({ error: 'Failed to parse CSV file: ' + err.message });
+          .json({ error: 'CSV validation failed: ' + validationErr.message });
       }
 
-      // Return the JSON data
-      res.json({
-        success: true,
-        message: 'CSV successfully converted to JSON',
-        recordCount: data.length,
-        data: data,
+      if (!isValid) {
+        // Clean up file on validation failure
+        CSVService.deleteFile(filePath, () => {});
+        return res.status(400).json({ error: 'Invalid CSV file structure' });
+      }
+
+      // Convert CSV to JSON using the service
+      CSVService.convertToJSON(filePath, (err, data) => {
+        if (err) {
+          return res
+            .status(400)
+            .json({ error: 'Failed to parse CSV file: ' + err.message });
+        }
+
+        // Return the JSON data
+        res.json({
+          success: true,
+          message: 'CSV successfully converted to JSON',
+          recordCount: data.length,
+          data: data,
+        });
       });
     });
   } catch (error) {
@@ -50,26 +67,43 @@ router.post('/api/convert', upload.single('csvFile'), (req, res) => {
 
     const filePath = req.file.path;
 
-    // Convert CSV to JSON using the service
-    CSVService.convertToJSON(filePath, (err, data) => {
-      if (err) {
+    // Validate CSV structure first
+    CSVService.validateCSV(filePath, (validationErr, isValid) => {
+      if (validationErr) {
+        // Clean up file on validation error
+        CSVService.deleteFile(filePath, () => {});
         return res
           .status(400)
-          .json({ error: 'Failed to parse CSV file: ' + err.message });
+          .json({ error: 'CSV validation failed: ' + validationErr.message });
       }
 
-      // Set headers for file download
-      res.setHeader('Content-Type', 'application/json');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${req.file.originalname.replace(
-          '.csv',
-          '.json'
-        )}"`
-      );
+      if (!isValid) {
+        // Clean up file on validation failure
+        CSVService.deleteFile(filePath, () => {});
+        return res.status(400).json({ error: 'Invalid CSV file structure' });
+      }
 
-      // Send JSON data as downloadable file
-      res.send(JSON.stringify(data, null, 2));
+      // Convert CSV to JSON using the service
+      CSVService.convertToJSON(filePath, (err, data) => {
+        if (err) {
+          return res
+            .status(400)
+            .json({ error: 'Failed to parse CSV file: ' + err.message });
+        }
+
+        // Set headers for file download
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="${req.file.originalname.replace(
+            '.csv',
+            '.json'
+          )}"`
+        );
+
+        // Send JSON data as downloadable file
+        res.send(JSON.stringify(data, null, 2));
+      });
     });
   } catch (error) {
     console.error('Server error:', error);
