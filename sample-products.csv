@@ -1,0 +1,6 @@
+id,product_name,category,price,stock_quantity,last_updated
+1,iPhone 15 Pro,Electronics,999.99,50,2025-10-01
+2,MacBook Air M2,Electronics,1199.00,25,2025-10-02
+3,Nike Air Max,Footwear,129.99,100,2025-10-03
+4,Samsung Galaxy S24,Electronics,899.99,75,2025-10-04
+5,Adidas Ultraboost,Footwear,180.00,60,2025-10-05
